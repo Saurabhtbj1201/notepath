@@ -1,0 +1,442 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArticleCard } from '@/components/ArticleCard';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Search, TrendingUp, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SidebarUsersList } from '@/components/SidebarUsersList';
+import { SidebarSelfProfile } from '@/components/SidebarSelfProfile';
+import { SuggestedArticlesSidebar } from '@/components/SuggestedArticlesSidebar';
+import { PopularTopicsSidebar } from '@/components/PopularTopicsSidebar';
+import { RatingBadge } from '@/components/RatingBadge';
+import { NewsletterCTA } from '@/components/NewsletterCTA';
+import { SubscribeBanner } from '@/components/SubscribeBanner';
+import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern';
+
+interface Article {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail_url: string | null;
+  views: number;
+  published_at: string;
+  author_username?: string;
+  topic_name?: string;
+}
+
+const ARTICLES_PER_PAGE = 6;
+
+const Home = () => {
+  const { user } = useAuth();
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [topics, setTopics] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchTopics();
+    fetchTags();
+  }, []);
+
+  useEffect(() => {
+    setArticles([]);
+    setPage(0);
+    setHasMore(true);
+  }, [searchQuery, selectedTopic, selectedTag]);
+
+  useEffect(() => {
+    fetchArticles();
+  }, [page, searchQuery, selectedTopic, selectedTag]);
+
+  const fetchArticles = async () => {
+    if (page === 0) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    let query = supabase
+      .from('articles')
+      .select('*')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .range(page * ARTICLES_PER_PAGE, (page + 1) * ARTICLES_PER_PAGE - 1);
+
+    if (searchQuery) {
+      query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+    }
+
+    if (selectedTopic) {
+      query = query.eq('topic_id', selectedTopic);
+    }
+
+    const { data, error } = await query;
+
+    if (!error && data) {
+      if (data.length < ARTICLES_PER_PAGE) {
+        setHasMore(false);
+      }
+
+      const articlesWithDetails = await Promise.all(
+        data.map(async (article) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', article.author_id)
+            .single();
+          
+          const { data: topic } = await supabase
+            .from('topics')
+            .select('name')
+            .eq('id', article.topic_id)
+            .single();
+          
+          return {
+            ...article,
+            author_username: profile?.username || 'Anonymous',
+            topic_name: topic?.name,
+          };
+        })
+      );
+
+      let filteredArticles = articlesWithDetails;
+
+      if (selectedTag) {
+        const { data: articleTags } = await supabase
+          .from('article_tags')
+          .select('article_id')
+          .eq('tag_id', selectedTag);
+        
+        const articleIds = articleTags?.map(at => at.article_id) || [];
+        filteredArticles = articlesWithDetails.filter(article => articleIds.includes(article.id));
+      }
+
+      if (page === 0) {
+        setArticles(filteredArticles);
+      } else {
+        setArticles(prev => [...prev, ...filteredArticles]);
+      }
+    }
+    setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const [target] = entries;
+    if (target.isIntersecting && hasMore && !loading && !loadingMore) {
+      setPage(prev => prev + 1);
+    }
+  }, [hasMore, loading, loadingMore]);
+
+  useEffect(() => {
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1,
+    });
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, [handleObserver]);
+
+  const fetchTopics = async () => {
+    const { data } = await supabase.from('topics').select('*').order('name');
+    if (data) setTopics(data);
+  };
+
+  const fetchTags = async () => {
+    const { data } = await supabase.from('tags').select('*').order('name');
+    if (data) setTags(data);
+  };
+
+  const getTrendingArticles = () => {
+    return [...articles].sort((a, b) => b.views - a.views).slice(0, 5);
+  };
+
+  return (
+    <>
+      <Helmet>
+        <title>NotePath - Discover Amazing Stories & Articles</title>
+        <meta name="description" content="Discover amazing stories from talented writers. Read articles on technology, lifestyle, business, and more on NotePath." />
+        <meta name="keywords" content="NotePath, blog, articles, stories, writing, technology, lifestyle, business" />
+        <link rel="canonical" href="https://notepath-np.lovable.app/" />
+        <meta property="og:title" content="NotePath - Discover Amazing Stories & Articles" />
+        <meta property="og:description" content="Discover amazing stories from talented writers. Read articles on technology, lifestyle, business, and more." />
+        <meta property="og:url" content="https://notepath-np.lovable.app/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="NotePath" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="NotePath - Discover Amazing Stories & Articles" />
+        <meta name="twitter:description" content="Discover amazing stories from talented writers on NotePath." />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "NotePath",
+            "url": "https://notepath-np.lovable.app",
+            "description": "Discover amazing stories from talented writers",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://notepath-np.lovable.app/?search={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          })}
+        </script>
+      </Helmet>
+      <div className="min-h-screen bg-background">
+        {/* Subscribe Banner at top */}
+        <SubscribeBanner />
+        
+        {/* Hero Section - Only show when not logged in */}
+        {!user && (
+          <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-card via-card to-primary/5 py-16 md:py-24">
+            <InteractiveGridPattern
+              className="absolute inset-0 h-full w-full [mask-image:radial-gradient(600px_circle_at_center,white,transparent)]"
+              width={40}
+              height={40}
+              squaresClassName="hover:fill-primary/20"
+            />
+            <div className="container relative mx-auto px-4 z-10">
+              <div className="mx-auto max-w-4xl text-center">
+                <Badge variant="secondary" className="mb-4 px-4 py-1.5 text-sm font-medium">
+                  ✨ Your Journey Through Knowledge Starts Here
+                </Badge>
+                <h1 className="mb-6 font-serif text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
+                  Welcome to <span className="text-primary">NotePath</span>
+                </h1>
+                <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground md:text-xl">
+                  Explore insightful articles from passionate writers. Share your knowledge, 
+                  discover new perspectives, and connect with a community that values learning.
+                </p>
+                
+                <div className="mx-auto max-w-xl">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Search articles by title or description..."
+                      className="h-12 pl-12 text-base shadow-sm"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Rating Badges */}
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                  <RatingBadge 
+                    title="Best Writing Platform" 
+                    subtitle="2,000+ reviews" 
+                    rating={5} 
+                  />
+                  <RatingBadge 
+                    title="Top Community" 
+                    subtitle="1,500+ members" 
+                    rating={5} 
+                  />
+                  <RatingBadge 
+                    title="Modern Leading" 
+                    subtitle="Award 2024" 
+                    rating={5} 
+                    className="hidden md:flex"
+                  />
+                </div>
+
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    <span>Community-driven content</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    <span>Free to read & write</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    <span>Follow your favorite authors</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
+          {/* Main Content */}
+          <div>
+            {/* Topics Filter */}
+            <div className="mb-6">
+              <h2 className="mb-3 font-serif text-xl font-semibold">Topics</h2>
+              <div className="flex flex-wrap gap-2">
+                <Badge
+                  variant={selectedTopic === null ? 'default' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedTopic(null)}
+                >
+                  All
+                </Badge>
+                {topics.map((topic) => (
+                  <Badge
+                    key={topic.id}
+                    variant={selectedTopic === topic.id ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedTopic(topic.id)}
+                  >
+                    {topic.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Tags Filter */}
+            <div className="mb-8">
+              <h2 className="mb-3 font-serif text-xl font-semibold">Tags</h2>
+              <div className="flex flex-wrap gap-2">
+                <Badge
+                  variant={selectedTag === null ? 'default' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedTag(null)}
+                >
+                  All
+                </Badge>
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant={selectedTag === tag.id ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedTag(tag.id)}
+                  >
+                    {tag.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Articles Grid */}
+            {loading ? (
+              <div className="grid gap-6 sm:grid-cols-2">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="space-y-3">
+                    <Skeleton className="aspect-video w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                ))}
+              </div>
+            ) : articles.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-lg text-muted-foreground">No articles found</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {articles.map((article) => (
+                    <ArticleCard
+                      key={article.id}
+                      id={article.id}
+                      title={article.title}
+                      description={article.description || ''}
+                      thumbnailUrl={article.thumbnail_url || undefined}
+                      authorName={article.author_username || 'Anonymous'}
+                      topicName={article.topic_name}
+                      tags={[]}
+                      views={article.views}
+                      publishedAt={article.published_at}
+                    />
+                  ))}
+                </div>
+                
+                {/* Load More Trigger */}
+                <div ref={loadMoreRef} className="py-8 flex justify-center">
+                  {loadingMore && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Loading more articles...</span>
+                    </div>
+                  )}
+                  {!hasMore && articles.length > 0 && (
+                    <p className="text-muted-foreground">No more articles to load</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <aside className="space-y-6">
+            {/* Self Profile */}
+            <SidebarSelfProfile />
+
+            {/* Trending Articles */}
+            <div className="rounded-lg border border-border bg-card p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <h2 className="font-serif text-xl font-semibold">Trending</h2>
+              </div>
+              <div className="space-y-4">
+                {getTrendingArticles().map((article, index) => (
+                  <a
+                    key={article.id}
+                    href={`/article/${article.id}`}
+                    className="block group"
+                  >
+                    <div className="flex gap-3">
+                      <span className="text-2xl font-bold text-muted-foreground">
+                        {(index + 1).toString().padStart(2, '0')}
+                      </span>
+                      <div>
+                        <h3 className="line-clamp-2 font-medium group-hover:text-primary">
+                          {article.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {article.views} views
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Suggested Articles */}
+            <SuggestedArticlesSidebar />
+
+            {/* Popular Topics */}
+            <PopularTopicsSidebar 
+              onTopicSelect={setSelectedTopic} 
+              selectedTopic={selectedTopic} 
+            />
+
+            {/* Users to Follow */}
+            <SidebarUsersList />
+          </aside>
+        </div>
+      </div>
+
+      {/* Newsletter CTA Section */}
+      <NewsletterCTA />
+    </div>
+    </>
+  );
+};
+
+export default Home;
