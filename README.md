@@ -1,73 +1,148 @@
-# Welcome to your Lovable project
+# NotePath 📝
 
-## Project info
+NotePath is a modern, feature-rich platform designed for writers and readers to discover, create, and share amazing stories. Built with performance and user experience in mind, it provides a seamless interface for publishing articles on technology, lifestyle, business, and more.
 
-**URL**: https://lovable.dev/projects/e2fd8ef3-e86f-45fc-a35a-8a65949f665b
+Live Demo: [https://notepath-pi.vercel.app/](https://notepath-pi.vercel.app/)
 
-## How can I edit this code?
+## ✨ Key Features
 
-There are several ways of editing your application.
+- **✍️ Rich Text Editor**: powered by TipTap for a smooth writing experience.
+- **🎨 Modern UI/UX**: Clean, responsive design using Tailwind CSS and Shadcn UI.
+- **👤 User Profiles**: Public profiles, dashboards, and customizable settings.
+- **🏆 Achievements System**: Gamification elements to engage users.
+- **📊 Admin Dashboard**: Comprehensive tools for content management.
+- **🔍 Discovery & Search**: Filter articles by category or search term.
+- **🔐 Secure Authentication**: Powered by Supabase Auth.
+- **📱 Fully Responsive**: Optimized for mobile, tablet, and desktop devices.
+- **🌙 Dark Mode Support**: (If applicable, or usually standard with Shadcn).
 
-**Use Lovable**
+## 🛠️ Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e2fd8ef3-e86f-45fc-a35a-8a65949f665b) and start prompting.
+### Frontend
+- **Framework**: [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Components**: [Shadcn UI](https://ui.shadcn.com/) / [Radix UI](https://www.radix-ui.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
 
-Changes made via Lovable will be committed automatically to this repo.
+### Backend & Data
+- **Backend as a Service**: [Supabase](https://supabase.com/)
+- **Database**: PostgreSQL (via Supabase)
+- **State Management**: [TanStack Query (React Query)](https://tanstack.com/query/latest)
 
-**Use your preferred IDE**
+### Tools & Libraries
+- **Forms**: React Hook Form + Zod validation
+- **Editor**: TipTap
+- **Charts**: Recharts
+- **Notifications**: Sonner
+- **Routing**: React Router DOM
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Follow these steps to set up the project locally.
 
-Follow these steps:
+### Prerequisites
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Node.js (v18 or higher recommended)
+- npm or yarn or pnpm
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Installation
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Saurabhtbj1201/notepath.git
+   cd notepath
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
+
+3. **Set up Environment Variables**
+   Create a `.env` file in the root directory and confirm the exact variable names used in `src/integrations/supabase/client.ts` or `vite-env.d.ts`. Typically, for a Supabase project, you will need:
+
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+   ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:8080](http://localhost:8080) (or the port shown in your terminal) to view it in the browser.
+
+## 📂 Project Structure
+
+```
+src/
+├── components/     # Reusable UI components
+├── contexts/       # React Context providers
+├── hooks/          # Custom React hooks
+├── integrations/   # Third-party integrations (Supabase)
+├── lib/            # Utility functions and helpers
+├── pages/          # Application routes/pages
+└── main.tsx        # Application entry point
 ```
 
-**Edit a file directly in GitHub**
+## 🤝 Contributing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-**Use GitHub Codespaces**
+## 📄 License
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+This project is licensed under the MIT License.
 
-## What technologies are used for this project?
+## 👨💻 Developer
+<div align="center">
 
-This project is built with:
+### © Made with ❤️ by Saurabh Kumar. All Rights Reserved 2025
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+<!-- Profile Section with Photo and Follow Button -->
+<a href="https://github.com/Saurabhtbj1201">
+  <img src="https://github.com/Saurabhtbj1201.png" width="100" style="border-radius: 50%; border: 3px solid #0366d6;" alt="Saurabh Profile"/>
+</a>
 
-## How can I deploy this project?
+### [Saurabh Kumar](https://github.com/Saurabhtbj1201)
 
-Simply open [Lovable](https://lovable.dev/projects/e2fd8ef3-e86f-45fc-a35a-8a65949f665b) and click on Share -> Publish.
+<a href="https://github.com/Saurabhtbj1201">
+  <img src="https://img.shields.io/github/followers/Saurabhtbj1201?label=Follow&style=social" alt="GitHub Follow"/>
+</a>
 
-## Can I connect a custom domain to my Lovable project?
+### 🔗 Connect With Me
 
-Yes, you can!
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/saurabhtbj1201)
+[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/saurabhtbj1201)
+[![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/saurabhtbj1201)
+[![Facebook](https://img.shields.io/badge/Facebook-1877F2?style=for-the-badge&logo=facebook&logoColor=white)](https://facebook.com/saurabh.tbj)
+[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=todoist&logoColor=white)](https://gu-saurabh.site)
+[![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/9798024301)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+<p align="center">
+
+  <strong>Made with ❤️ by Saurabh Kumar</strong>
+  <br>
+  ⭐ Star this repo if you find it helpful!
+</p>
+
+![Repo Views](https://komarev.com/ghpvc/?username=Saurabhtbj1201&style=flat-square&color=red)
+
+</div>
+
+---
+
+<div align="center">
+
+### 💝 If you like this project, please give it a ⭐ and share it with others!
+
+**Happy Coding! 🚀**
+
+</div>
